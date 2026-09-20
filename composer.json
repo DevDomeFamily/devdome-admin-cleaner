@@ -1,0 +1,28 @@
+{
+    "name": "devdome/devdome-admin-cleaner",
+    "description": "Free WordPress admin cleaner: hide admin notices into a notice inbox, snooze them, remove dashboard widgets, clean up the admin bar and give client roles a simpler admin with Client Mode.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://wordpress.org/plugins/devdome-admin-cleaner/",
+    "keywords": [
+        "wordpress",
+        "wordpress-plugin",
+        "admin-notices",
+        "dashboard-widgets",
+        "client-mode"
+    ],
+    "authors": [
+        {
+            "name": "DevDome",
+            "homepage": "https://devdome.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/DevDomeFamily/devdome-admin-cleaner/issues",
+        "source": "https://github.com/DevDomeFamily/devdome-admin-cleaner"
+    },
+    "require": {
+        "php": ">=7.4",
+        "composer/installers": "^1.0 || ^2.0"
+    }
+}
