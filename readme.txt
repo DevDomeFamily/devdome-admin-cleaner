@@ -1,18 +1,22 @@
-=== DevDome Admin Cleaner: Admin Bar, Admin Menu & Dashboard Cleanup ===
+=== DevDome Admin Cleaner: Remove Dashboard Widgets and Hide Menu Items ===
 Contributors: devdome
-Tags: admin bar, hide menu items, toolbar, hide admin notices, remove dashboard widgets
+Tags: remove dashboard widgets, hide menu items, declutter admin, admin cleanup, hide admin notices
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Hide admin notices, admin bar items and dashboard widgets. Client Mode hides selected admin menu items for chosen roles; permissions stay unchanged.
+Hide admin notices, remove dashboard widgets from view and hide selected admin menu and toolbar items without changing permissions.
 
 == Description ==
 
-DevDome Admin Cleaner helps you simplify the WordPress backend by hiding notices, dashboard widgets and selected toolbar items. Review captured notices in the Notice Inbox and use Client Mode to simplify the admin dashboard for selected roles. Cleanup changes what users see without changing their permissions.
+DevDome Admin Cleaner provides admin cleanup for a clean dashboard in WordPress. Remove dashboard widgets from view, including the Welcome panel, Activity, Quick Draft and Site Health. Choose individual settings or use Clean My Admin to apply a broad cleanup.
+
+Hide admin notices for yourself or all administrators, then review captured notices in the Notice Inbox. Snooze selected notices for 1 or 7 days and restore them when needed. Notice hiding applies only to users who can access Admin Cleaner and includes update, error and security notices. It changes on-screen visibility without disabling updates or notification emails.
+
+Use Client Mode to declutter admin screens for chosen roles, including custom roles. Hide menu items in the admin menu without changing permissions; users with manage_options, the Admin Cleaner capability or network management privileges are exempt. Separate cleanup settings hide selected admin bar items, including the WordPress logo, Comments, New, Updates and Customize. The toolbar itself remains available.
 
 = Hide admin notices and review them later =
 
@@ -185,6 +189,12 @@ Yes. Select which built-in dashboard widgets to hide and use the shared option f
 5. Client Mode: pick the roles and the menu entries they no longer see. Permissions stay unchanged.
 
 == Changelog ==
+
+= 1.0.9 =
+
+* Shared DevDome library 1.7.10: the one-time Report a bug hint is recorded through a nonce-checked request instead of on a page view; the DevDome dashboard lists only real problems and prints its icons through the WordPress escaping functions.
+* The plugin screen is printed directly instead of being buffered, and every value is escaped where it is printed (WordPress.org review rule).
+* Listing text updated: title, short description, tags and introduction.
 
 = 1.0.8 =
 

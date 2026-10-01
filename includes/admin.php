@@ -343,10 +343,10 @@ function devdadcl_render_page()
     if (!isset($tabs[$tab])) {
         $tab = 'overview';
     }
-    // The page is built inside a guard window and buffered (DESIGN.md 24): a query that failed while it was
-    // built gets a red banner on top instead of a screen that quietly shows defaults.
+    // The page is built inside a guard window (DESIGN.md 24): a query that failed while it was built gets a red banner
+    // on top instead of a screen that quietly shows defaults. Printed directly, never buffered (WordPress.org rule):
+    // the banner is printed after the page and ac-admin.js lifts it to the top.
     devdadcl_db_guard_begin();
-    ob_start();
     $s = devdadcl_hub_summary();
     // A handler that hit a database error (ac_error=db) or a save that did not land (ac_error=save): one red
     // banner over every tab, with "Report this error" (DESIGN.md 26). Flags are display-only (set by our own PRG).
@@ -446,15 +446,20 @@ function devdadcl_render_page()
         </div>
     </div>
     <?php
-    $html = (string) ob_get_clean();
-    if (devdadcl_db_guard_failed()) {
+    if (devdadcl_db_guard_failed()) :
         $banner_text = __('A database query failed while this page was built, so what it shows may be incomplete or stale. Reload the page; if it keeps happening, check the database with your host.', 'devdome-admin-cleaner');
-        $report_btn  = function_exists('devdcorev1_error_report_button') ? devdcorev1_error_report_button('devdome-admin-cleaner', DEVDADCL_VERSION, 'Admin Cleaner page built over a failed database query: ' . (function_exists('devdadcl_redact') ? devdadcl_redact(devdadcl_db_guard_error()) : devdadcl_db_guard_error()), 'Admin Cleaner page') : '';
-        $banner      = '<div class="dd-banner" style="margin:16px 24px 0;border-color:#fecaca;background:#fef2f2;color:#991b1b;">' . esc_html($banner_text) . $report_btn . '</div>';
-        $html        = preg_replace_callback('/(<div class="dd-app[^>]*>)/', function ($m) use ($banner) { return $m[1] . $banner; }, $html, 1); // no $1 in the banner text can act as a backreference (DeepSeek round 6)
-    }
+        $report_btn  = function_exists('devdcorev1_error_report_button') ? devdcorev1_error_report_button('devdome-admin-cleaner', DEVDADCL_VERSION, 'Admin Cleaner page built over a failed database query: ' . (function_exists('devdadcl_redact') ? devdadcl_redact(devdadcl_db_guard_error()) : (string) devdadcl_db_guard_error()), 'Admin Cleaner page') : '';
+        $report_kses = array(
+            'span'   => array('class' => true),
+            'button' => array('type' => true, 'class' => true, 'data-ddc-report' => true),
+            'svg'    => array('viewbox' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true, 'aria-hidden' => true),
+            'path'   => array('d' => true),
+        );
+        ?>
+        <div class="dd-banner" id="devdadcl-guard-banner" style="margin:16px 24px 0;border-color:#fecaca;background:#fef2f2;color:#991b1b;"><?php echo esc_html($banner_text); ?><?php echo wp_kses($report_btn, $report_kses); ?></div>
+    <?php endif; ?>
+    <?php
     devdadcl_db_guard_end();
-    echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the buffered page, escaped where built
 }
 
 /* ----------------------------- overview tab ----------------------------- */
@@ -587,7 +592,7 @@ function devdadcl_render_overview_tab($s)
                 <div class="dd-stat"><div class="dd-stat-num" style="color:<?php echo esc_attr($crit_vis > 0 ? '#ef4444' : '#10b981'); ?>;"><?php echo (int) $crit_vis; ?></div><div class="dd-stat-lbl"><?php esc_html_e('Critical visible', 'devdome-admin-cleaner'); ?></div><div class="dd-stat-sub">
                     <?php
                     /* translators: %d is the number of critical notices hidden for all admins. */
-                    printf(esc_html(_n('%d critical hidden', '%d critical hidden', $crit_hid, 'devdome-admin-cleaner')), (int) $crit_hid); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- integer
+                    echo esc_html(sprintf(_n('%d critical hidden', '%d critical hidden', $crit_hid, 'devdome-admin-cleaner'), (int) $crit_hid));
                     ?>
                 </div></div>
                 <div class="dd-stat"><div class="dd-stat-num" style="color:<?php echo esc_attr($promo_vis > 0 ? '#f59e0b' : '#10b981'); ?>;"><?php echo (int) $promo_vis; ?></div><div class="dd-stat-lbl"><?php esc_html_e('Promos visible', 'devdome-admin-cleaner'); ?></div><div class="dd-stat-sub"><?php echo (int) $s['cleanup_applied'] ? esc_html__('Cleanup applied', 'devdome-admin-cleaner') : esc_html__('Not cleaned yet', 'devdome-admin-cleaner'); ?></div></div>
@@ -647,11 +652,11 @@ function devdadcl_render_dropdown($name, $options, $label = '')
     ?>
     <div class="dd-dd" data-name="<?php echo esc_attr($name); ?>" data-placeholder="<?php echo esc_attr($placeholder); ?>" id="<?php echo esc_attr($id); ?>">
         <input type="hidden" name="<?php echo esc_attr($name); ?>" value="">
-        <div class="dd-dd-trigger" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false"<?php echo $label !== '' ? ' aria-label="' . esc_attr($label) . '"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute fragment, the value is esc_attr()'d above. ?>>
+        <div class="dd-dd-trigger" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false"<?php if ($label !== '') : ?> aria-label="<?php echo esc_attr($label); ?>"<?php endif; ?>>
             <span class="dd-dd-label"><?php echo esc_html($placeholder); ?></span>
             <svg class="dd-dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
         </div>
-        <div class="dd-dd-panel" role="listbox"<?php echo $label !== '' ? ' aria-label="' . esc_attr($label) . '"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute fragment, the value is esc_attr()'d above. ?>>
+        <div class="dd-dd-panel" role="listbox"<?php if ($label !== '') : ?> aria-label="<?php echo esc_attr($label); ?>"<?php endif; ?>>
             <?php foreach ($options as $val => $option_label) : ?>
                 <?php if ((string) $val === '') { continue; } ?>
                 <div class="dd-dd-opt" role="option" tabindex="-1" aria-selected="false" data-value="<?php echo esc_attr($val); ?>"><?php echo esc_html($option_label); ?></div>

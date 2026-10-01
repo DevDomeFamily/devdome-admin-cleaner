@@ -3,7 +3,7 @@
 Plugin Name: DevDome Admin Cleaner
 Plugin URI: https://devdome.com/
 Description: Clean up your WordPress admin in one click. Hide promo notices, remove dashboard clutter, simplify the admin bar, and give client roles a simpler workspace. Part of the DevDome suite.
-Version: 1.0.8
+Version: 1.0.9
 Author: DevDome
 Author URI: https://devdome.com
 Text Domain: devdome-admin-cleaner
@@ -23,7 +23,7 @@ if (file_exists(__DIR__ . '/wporg-build.php')) {
     require __DIR__ . '/wporg-build.php';
 }
 
-define('DEVDADCL_VERSION', '1.0.8');
+define('DEVDADCL_VERSION', '1.0.9');
 define('DEVDADCL_DIR', plugin_dir_path(__FILE__));
 define('DEVDADCL_URL', plugin_dir_url(__FILE__));
 define('DEVDADCL_FILE', __FILE__);
