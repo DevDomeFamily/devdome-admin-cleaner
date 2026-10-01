@@ -1,6 +1,6 @@
 # DevDome Admin Cleaner: Remove Dashboard Widgets and Hide Menu Items
 
-Hide admin notices, admin bar items and dashboard widgets. Client Mode hides selected admin menu items for chosen roles; permissions stay unchanged. Simplify the WordPress backend and review captured notifications in a Notice Inbox. Free, GPL, no paid tier; this repository mirrors the release published on WordPress.org.
+Hide admin notices, remove dashboard widgets from view and hide selected admin menu and toolbar items without changing permissions. Choose individual settings or use Clean My Admin to apply a broad cleanup. Review captured notices in the Notice Inbox, snooze selected notices for 1 or 7 days and restore them when needed.
 
 [![WordPress Plugin Version](https://img.shields.io/wordpress/plugin/v/devdome-admin-cleaner?label=wp.org)](https://wordpress.org/plugins/devdome-admin-cleaner/)
 [![Active Installs](https://img.shields.io/wordpress/plugin/installs/devdome-admin-cleaner)](https://wordpress.org/plugins/devdome-admin-cleaner/)
