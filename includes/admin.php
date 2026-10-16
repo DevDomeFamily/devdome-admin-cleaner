@@ -366,6 +366,7 @@ function devdadcl_render_page()
     }
     ?>
     <div class="dd-app min-h-screen bg-gray-50 text-[#3c434a] font-sans text-[13px]">
+        <?php if (function_exists('devdcorev1_analytics_card')) { devdcorev1_analytics_card(); } ?>
         <?php if ('' !== $err_text) : ?>
             <div class="dd-banner" data-ac-flash="1" style="margin:16px 24px 0;border-color:#fecaca;background:#fef2f2;color:#991b1b;"><?php echo esc_html($err_text); ?><?php if (function_exists('devdcorev1_error_report_button')) { echo devdcorev1_error_report_button('devdome-admin-cleaner', DEVDADCL_VERSION, ('db' === $err ? 'Database error during an Admin Cleaner action: ' : 'Settings save did not land: ') . $err_text, 'Admin Cleaner ' . $tab); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the core helper ?></div>
         <?php endif; ?>

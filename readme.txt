@@ -4,7 +4,7 @@ Tags: remove dashboard widgets, hide menu items, declutter admin, admin cleanup,
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -190,6 +190,14 @@ Yes. Select which built-in dashboard widgets to hide and use the shared option f
 
 == Changelog ==
 
+= 1.0.10 =
+
+* A dismissible note at the top of the settings page mentions the free DevDome Analytics plugin, with a button that opens the plugin installer (or the Analytics screen when it is already active). Dismiss hides it for good.
+* Shared DevDome library 1.7.13: uninstalling the last DevDome plugin also removes the note's dismissal, the update-repair records and the per-user "Report a bug" flag; the visitor-beacon flood guard keeps one short-lived record per address and clears its expired ones itself, and behind Cloudflare it counts per visitor instead of per Cloudflare address.
+* Shared DevDome library 1.7.12: a Cloudflare visitor address header is trusted only when the connection itself comes from a Cloudflare address, so a forged header from anywhere else is ignored.
+* Shared DevDome library 1.7.11: on a subdirectory multisite, a site mapped to its own domain is its own site and no longer shares the network's connection.
+* Deleting the plugin also removes the cached update-check answer it kept in the database.
+
 = 1.0.9 =
 
 * Shared DevDome library 1.7.10: the one-time Report a bug hint is recorded through a nonce-checked request instead of on a page view; the DevDome dashboard lists only real problems and prints its icons through the WordPress escaping functions.
@@ -271,3 +279,11 @@ Yes. Select which built-in dashboard widgets to hide and use the shared option f
 = 0.1.0 =
 
 * Initial release: one-click admin cleanup with a live clutter score, a notice inbox with snooze/mute/restore (criticals always kept visible), per-widget dashboard cleanup, admin-bar and footer/version hiding, role-based Client Mode, and five ready-made presets.
+
+== Upgrade Notice ==
+
+= 1.0.10 =
+Housekeeping release. Nothing changes on the screen.
+
+= 1.0.9 =
+Shared DevDome library 1.7.10 and WordPress.org review fixes (escaping, no output buffering). Settings are unaffected.

@@ -43,6 +43,13 @@ if (is_multisite()) {
 // Coordinate shared-core cleanup (removes the core cron/option only if this is the LAST DevDome
 // plugin still installed, so removing this one never orphans the core for the others).
 require_once __DIR__ . '/lib/devdome-core/uninstall.php';
+// The suite updater caches its update manifest under a hashed key, per site and (on multisite) network wide.
+// Clear both spellings, or the cache outlives the plugin.
+$devdadcl_updater_cache = 'devdome_upd_' . md5('devdome-admin-cleaner');
+delete_transient($devdadcl_updater_cache);
+if (is_multisite()) {
+    delete_site_transient($devdadcl_updater_cache);
+}
 devdcorev1_uninstall_cleanup('devdome-admin-cleaner/devdome-admin-cleaner.php');
 
 wp_cache_flush();
