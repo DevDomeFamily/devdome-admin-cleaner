@@ -479,4 +479,33 @@
 			});
 		});
 	})();
+
+	/* ------------------ hidden menu items (1.0.11): the role dropdown shows that role's block ------------------ */
+	(function () {
+		var dd = app.querySelector('.dd-dd[data-name="ac_menu_role"]');
+		var blocks = Array.prototype.slice.call(app.querySelectorAll('.ac-menu-role'));
+		if (!dd || !blocks.length) { return; }
+		var input = dd.querySelector('input[type="hidden"]');
+		function show(role) { blocks.forEach(function (b) { if (b.getAttribute('data-role') === role) { b.removeAttribute('hidden'); } else { b.setAttribute('hidden', 'hidden'); } }); }
+		if (input) { input.addEventListener('change', function () { show(input.value); }); }
+		var first = blocks[0].getAttribute('data-role');
+		var firstOpt = dd.querySelector('.dd-dd-opt[data-value="' + first + '"]');
+		if (firstOpt && typeof ddApplyValue === 'function') { ddApplyValue(dd, first, true); } else { show(first); }
+	})();
+
+	/* ------------------ menu order (1.0.12): up/down moves the row, the hidden inputs follow the DOM order ------------------ */
+	(function () {
+		var list = app.querySelector('#ac-menu-order');
+		if (!list) { return; }
+		list.addEventListener('click', function (e) {
+			var btn = e.target.closest ? e.target.closest('.ac-menu-move') : null;
+			if (!btn) { return; }
+			var row = btn.closest('.ac-menu-order-row');
+			if (!row) { return; }
+			if (btn.getAttribute('data-move') === 'up' && row.previousElementSibling) { list.insertBefore(row, row.previousElementSibling); }
+			else if (btn.getAttribute('data-move') === 'down' && row.nextElementSibling) { list.insertBefore(row.nextElementSibling, row); }
+			var form = document.getElementById('ac-settings-form');
+			if (form) { form.dispatchEvent(new Event('change', { bubbles: true })); } // the pending-changes counter hears it
+		});
+	})();
 })();

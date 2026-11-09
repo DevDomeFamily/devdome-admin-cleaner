@@ -63,6 +63,10 @@ function devdadcl_default_settings()
         'client_hide_plugin_editor' => 1,
         'client_hide_updates'  => 1,
         'client_hide_version'  => 1,
+        'client_hidden_menus'  => array(), // role => menu ids hidden for that role (1.0.11), ids from the menu catalog
+        'client_hidden_metaboxes' => array(), // role => "post_type|box id" hidden for that role (1.0.12), ids from the meta box catalog
+        'menu_order'           => array(), // top-level menu slugs in the order the administrator picked (1.0.12), everyone sees it
+        'menu_names'           => array(), // list of [slug, new title] pairs (1.0.12), everyone sees them
     );
 }
 
@@ -127,7 +131,26 @@ function devdadcl_save_settings($settings)
     // Keep only known keys, merged onto defaults so the option shape stays stable.
     $clean = array_merge(devdadcl_default_settings(), array_intersect_key($settings, devdadcl_default_settings()));
     foreach (devdadcl_default_settings() as $k => $d) { // every value in its default's type: 'foo' never lands as a flag (DeepSeek round 8)
-        $clean[$k] = is_array($d) ? array_values(array_filter((array) $clean[$k], 'is_string')) : (int) !empty($clean[$k]);
+        if (is_array($d)) {
+            // A flat list stays a list of strings. A map of lists (client_hidden_menus: role => ids, 1.0.11) keeps its
+            // keys and every inner list is a list of strings; anything else inside is dropped.
+            $v      = (array) $clean[$k];
+            $nested = $v && count(array_filter($v, 'is_array')) === count($v);
+            if ($nested) {
+                $map = array();
+                foreach ($v as $key => $list) {
+                    $key = sanitize_key((string) $key);
+                    if ($key !== '') {
+                        $map[$key] = array_values(array_filter((array) $list, 'is_string'));
+                    }
+                }
+                $clean[$k] = $map;
+            } else {
+                $clean[$k] = array_values(array_filter($v, 'is_string'));
+            }
+            continue;
+        }
+        $clean[$k] = (int) !empty($clean[$k]);
     }
     $ok    = devdadcl_option_write(devdadcl_settings_option(), $clean);
     devdadcl_get_settings(true); // bust the per-request memo so later reads see the saved values

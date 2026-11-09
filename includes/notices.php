@@ -111,7 +111,14 @@ function devdadcl_buffer_close()
     }
 
     $nodes = devdadcl_split_notices($html);
+    // Hide all means all (owner 3 Nov 2026): with Auto-hide on, markup a plugin prints on a notice hook WITHOUT a
+    // notice wrapper (Wordfence's "installation is incomplete" bar is a bare <ul>) is dropped too, not re-emitted
+    // as filler. Scripts, styles and comments beside notices still pass; only visible markup goes.
+    $hide_all = function_exists('devdadcl_get_int') && devdadcl_get_int('auto_hide_new', 0);
     if (empty($nodes)) {
+        if ($hide_all && devdadcl_filler_visible($html) && strpos($html, 'dd-ac-protected-banner') === false) { // our own restore banner stays
+            return;
+        }
         echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- could not parse into nodes; print original untouched.
         return;
     }
@@ -130,7 +137,9 @@ function devdadcl_buffer_close()
         // <script> printed next to a notice appeared in the inbox as if it were one, and
         // could be "muted" - which silently dropped that script from the page.
         if ($entry['type'] !== 'notice') {
-            $out .= $entry['html'];
+            if (!$hide_all || !devdadcl_filler_visible($entry['html']) || strpos($entry['html'], 'dd-ac-protected-banner') !== false) {
+                $out .= $entry['html'];
+            }
             continue;
         }
         $node = $entry['html'];
@@ -210,6 +219,21 @@ function devdadcl_buffer_close()
  *
  * @return array list of entries, or empty if nothing matched (caller then echoes the original).
  */
+/**
+ * Does this filler render anything? Comments, <script>, <style>, <link>, <noscript> and <meta> are invisible;
+ * any other tag or any text left after removing them is a bar or message printed outside a notice wrapper.
+ */
+function devdadcl_filler_visible($html)
+{
+    $t = preg_replace('~<!--.*?-->~s', '', (string) $html);
+    $t = preg_replace('~<(script|style|noscript)\b[^>]*>.*?</\1\s*>~is', '', (string) $t);
+    $t = preg_replace('~<(link|meta)\b[^>]*/?>~i', '', (string) $t);
+    if (!is_string($t)) {
+        return true; // a regex failure: treat as visible, the caller then drops it only under hide-all
+    }
+    return preg_match('/<[a-z]/i', $t) === 1 || trim(wp_strip_all_tags($t)) !== '';
+}
+
 /**
  * Is this <div ...> opening tag a notice wrapper? The REAL class attribute is parsed (attribute by attribute), so a
  * class="notice" inside another attribute's value (title='class="notice"') or a data-class= never counts
@@ -775,9 +799,100 @@ function devdadcl_enqueue_late_script()
         'ajax'   => admin_url('admin-ajax.php'),
         'nonce'  => wp_create_nonce('devdadcl_late'),
         'screen' => $screen,
+        'bars'   => devdadcl_header_bars_selectors(), // 1.0.12: the bars outside the notice system, ripped out of the DOM
     ));
 }
 add_action('admin_enqueue_scripts', 'devdadcl_enqueue_late_script');
+
+/* ------------------ bars printed outside the notice system (1.0.12) ------------------ */
+
+/**
+ * Hide all means ALL (owner 3 Nov 2026). Every way a plugin can put a bar or message on an admin screen, and what
+ * closes it while Auto-hide is on:
+ *  1. admin_notices / all_admin_notices / user_admin_notices / network_admin_notices as div.notice  -> the capture above.
+ *  2. The same hooks with bare markup (Wordfence's <ul> bar, overlays)                               -> visible filler dropped.
+ *  3. in_admin_header (bars printed right after the admin bar)                                       -> buffered and dropped here.
+ *  4. admin_head markup (the browser moves it to the top of <body>)                                  -> CSS + ac-late.js.
+ *  5. admin_footer / admin_print_footer_scripts markup (lands under #wpwrap or <body>)               -> CSS + ac-late.js.
+ *  6. in_admin_footer markup (inside #wpfooter)                                                      -> CSS + ac-late.js.
+ *  7. Bars inserted by JavaScript at any time (prepend to #wpbody-content, #wpcontent, body)        -> ac-late.js observer.
+ *  8. Fixed or sticky bars glued to the top of the window                                            -> ac-late.js.
+ *  9. WordPress pointers (.wp-pointer tours)                                                         -> CSS + ac-late.js.
+ * 10. Dashboard widgets, admin-bar items, plugin-row notices, footer text, welcome panel             -> the cleanup switches.
+ * Not touched: messages inside the block editor (plugins and core share one channel there) and markup inside a
+ * plugin's own page body (.wrap), which is the page, not a bar.
+ *
+ * Core renders the admin bar on in_admin_header at priority 0, so the buffer opens at 1: the bar stays, every plugin
+ * bar after it goes. Core prints nothing else on that hook.
+ */
+function devdadcl_header_bars_hidden()
+{
+    return is_admin() && function_exists('devdadcl_get_int') && devdadcl_get_int('auto_hide_new', 0) && current_user_can(devdadcl_capability());
+}
+
+function devdadcl_header_buffer_open()
+{
+    if (!devdadcl_header_bars_hidden()) {
+        return;
+    }
+    if (ob_start()) {
+        $GLOBALS['devdadcl_header_levels'][] = ob_get_level();
+    }
+}
+
+function devdadcl_header_buffer_close()
+{
+    if (empty($GLOBALS['devdadcl_header_levels'])) {
+        return;
+    }
+    $owned = (int) array_pop($GLOBALS['devdadcl_header_levels']);
+    if (ob_get_level() < $owned) {
+        return; // closed by another component: nothing of ours is open
+    }
+    while (ob_get_level() > $owned) {
+        $top = ob_get_status();
+        if (empty($top) || !($top['flags'] & PHP_OUTPUT_HANDLER_REMOVABLE) || !ob_end_flush()) {
+            return; // a locked buffer above ours: pass through
+        }
+    }
+    $html = ob_get_clean();
+    if (is_string($html) && $html !== '' && !devdadcl_filler_visible($html)) {
+        echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- scripts and styles only, re-emitted unchanged
+    }
+}
+
+function devdadcl_init_header_capture()
+{
+    if (!is_admin()) {
+        return;
+    }
+    add_action('in_admin_header', 'devdadcl_header_buffer_open', 1); // after wp_admin_bar_render (0)
+    add_action('in_admin_header', 'devdadcl_header_buffer_close', PHP_INT_MAX);
+}
+add_action('admin_init', 'devdadcl_init_header_capture');
+
+/** The selectors ac-late.js rips out and this CSS hides first: anything beside core's own frame elements. */
+function devdadcl_header_bars_selectors()
+{
+    return array(
+        'body > :not(#wpwrap):not(script):not(style):not(link):not(noscript):not(template):has(~ #wpwrap)', // admin_head markup
+        '#wpwrap > :not(#adminmenumain):not(#adminmenuback):not(#adminmenuwrap):not(#wpcontent):not(#wpfooter):not(script):not(style)',
+        '#wpcontent > :not(#wpadminbar):not(#wpbody):not(.clear):not(script):not(style)',
+        '#wpfooter > :not(#footer-left):not(#footer-upgrade):not(.clear):not(script):not(style)',
+        '.wp-pointer',
+    );
+}
+
+function devdadcl_header_bars_css()
+{
+    if (!devdadcl_header_bars_hidden()) {
+        return;
+    }
+    wp_register_style('devdadcl-header-bars', false, array(), DEVDADCL_VERSION);
+    wp_enqueue_style('devdadcl-header-bars');
+    wp_add_inline_style('devdadcl-header-bars', implode(', ', devdadcl_header_bars_selectors()) . ' { display: none !important; }');
+}
+add_action('admin_enqueue_scripts', 'devdadcl_header_bars_css');
 
 /* ----------------------------- admin-bar bell --------------------------- */
 

@@ -51,4 +51,41 @@
 		});
 	});
 	obs.observe(document.body, { childList: true, subtree: true });
+
+	/* ---- bars outside the notice system (1.0.12, owner: hide all means ALL): ripped out of the DOM, not just hidden ---- */
+	var BARS = Array.isArray(cfg.bars) ? cfg.bars.join(', ') : '';
+	var CORE_TOP = /^(wpadminbar|wpwrap|wpbody|wpcontent|wpfooter|screen-meta|screen-meta-links|adminmenumain|wp-auth-check-wrap|wp-link-wrap|wp-link-backdrop|TB_window|TB_overlay|query-monitor-main|wp-admin-bar-root-default)$/;
+	var CORE_CLS = /(^|\s)(media-modal|media-modal-backdrop|ui-dialog|ui-widget-overlay|components-|interface-|edit-post-|edit-site-|wp-core-ui|notice|updated|error|update-nag|dd-app|dd-ac-protected-banner|wp-block-|editor-|block-editor-|popover|wp-a11y)/;
+	function isCore(el) {
+		return CORE_TOP.test(el.id || '') || CORE_CLS.test(el.className && typeof el.className === 'string' ? el.className : '') || /^(SCRIPT|STYLE|LINK|NOSCRIPT|TEMPLATE|IFRAME)$/.test(el.tagName);
+	}
+	function rip(el) {
+		if (!el || !el.parentNode || isOurs(el)) { return; }
+		el.setAttribute('data-devdadcl-bar', '1');
+		el.parentNode.removeChild(el);
+	}
+	function sweep() {
+		try {
+			if (BARS) { document.querySelectorAll(BARS).forEach(function (el) { if (!isCore(el) || el.classList.contains('wp-pointer')) { rip(el); } }); }
+		} catch (e) { /* an old browser without :has(): the CSS still hides what it can */ }
+		// Markup printed before the page's own .wrap on #wpbody-content (notices are handled above, screen meta is core's).
+		var bc = document.getElementById('wpbody-content');
+		var wrap = bc ? bc.querySelector(':scope > .wrap') : null;
+		if (bc && wrap) {
+			Array.prototype.slice.call(bc.children).some(function (el) {
+				if (el === wrap) { return true; }
+				if (!isCore(el) && !(el.matches && el.matches(SEL))) { rip(el); }
+				return false;
+			});
+		}
+		// Bars glued to the top of the window by a plugin's own CSS, wherever they sit in the DOM.
+		Array.prototype.slice.call(document.body.children).forEach(function (el) {
+			if (isCore(el) || el.id === 'wpwrap') { return; }
+			var cs = window.getComputedStyle(el);
+			if ((cs.position === 'fixed' || cs.position === 'sticky') && cs.display !== 'none' && parseFloat(cs.top || '9999') < 64 && el.getBoundingClientRect().width >= window.innerWidth * 0.5) { rip(el); }
+		});
+	}
+	sweep();
+	var pending = null;
+	new MutationObserver(function () { if (pending) { return; } pending = setTimeout(function () { pending = null; sweep(); }, 50); }).observe(document.documentElement, { childList: true, subtree: true });
 })();

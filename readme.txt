@@ -4,7 +4,7 @@ Tags: remove dashboard widgets, hide menu items, declutter admin, admin cleanup,
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.10
+Stable tag: 1.0.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -190,6 +190,21 @@ Yes. Select which built-in dashboard widgets to hide and use the shared option f
 
 == Changelog ==
 
+= 1.0.12 =
+
+* Auto-hide now also hides the bars some plugins draw above the page outside the WordPress notice system (for example the Wordfence "installation is incomplete" bar), server-rendered or added by script. Hide all means all.
+
+= 1.0.11 =
+
+* Client Mode: hidden meta boxes per role. The boxes of each post editor are listed once an administrator has opened it (plugin boxes included); tick what a role should not see and the box is removed from its editor. Permissions do not change.
+* Menu Order And Names: move any top-level admin menu up or down and give it another name. Applies to everyone who sees the admin menu, administrators included; submenus keep their place and update bubbles stay.
+* The clear-all-mutes ability is marked as a change that cannot be undone, so an AI assistant connected through MCP asks before running it.
+* Shared DevDome library 1.7.17: the connect beacon's flood guard counts an IPv6 visitor per /64 network, and the one-click install of another DevDome plugin verifies the downloaded package against the published checksum before installing.
+* Hardening (security review): the notice abilities mark each notice's source and excerpt as third-party text an AI agent must treat as data, never as instructions.
+* Hidden Menu Items on the Client tab: any wp-admin menu or submenu, the ones other plugins and the theme add included, can be hidden per role while Client Mode is on. The list comes from the menu an administrator sees, so plugin menus appear by themselves. The link is hidden; the page stays reachable by its address, and users who may manage options are never affected.
+* The first activation opens the plugin screen once: the DevDome Account card when the site is not connected yet, the Overview when it is. Bulk activations never redirect.
+* Shared DevDome library 1.7.16: the connect request to devdome.com stays valid for 60 minutes instead of 20, and the DevDome Tools page asks the server again while a request this site started is still open, so a connection authorized in a tab that never came back still completes; the Tools page notes when DevDome Analytics is not installed; the Analytics note styles are registered through WordPress instead of a style block in the page; one shared helper reads the visitor address behind a trusted proxy; the AI Assistant is listed in the plugin catalog. After connecting, the screen you land on says which account the site is connected to and the one next step.
+
 = 1.0.10 =
 
 * A dismissible note at the top of the settings page mentions the free DevDome Analytics plugin, with a button that opens the plugin installer (or the Analytics screen when it is already active). Dismiss hides it for good.
@@ -281,6 +296,9 @@ Yes. Select which built-in dashboard widgets to hide and use the shared option f
 * Initial release: one-click admin cleanup with a live clutter score, a notice inbox with snooze/mute/restore (criticals always kept visible), per-widget dashboard cleanup, admin-bar and footer/version hiding, role-based Client Mode, and five ready-made presets.
 
 == Upgrade Notice ==
+
+= 1.0.11 =
+Shared DevDome library 1.7.16 (connect request valid for 60 minutes). Nothing changes on the screen.
 
 = 1.0.10 =
 Housekeeping release. Nothing changes on the screen.

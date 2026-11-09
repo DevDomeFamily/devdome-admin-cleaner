@@ -8,8 +8,12 @@
 
 defined('ABSPATH') || exit;
 
-function devdadcl_activate()
+function devdadcl_activate($network_wide = false)
 {
+    // First activation only: the next admin page load opens this plugin's screen (never network-wide, never WP-CLI).
+    if (empty($network_wide) && !(defined('WP_CLI') && WP_CLI)) {
+        set_transient('devdadcl_activation_redirect', 1, 60);
+    }
     // Seed settings only when missing so an existing configuration is never clobbered.
     if (get_option(devdadcl_settings_option(), null) === null) {
         add_option(devdadcl_settings_option(), devdadcl_default_settings(), '', 'yes');

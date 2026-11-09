@@ -11,9 +11,12 @@ defined('WP_UNINSTALL_PLUGIN') || exit;
 /** Per-site cleanup (called once per site on multisite, or once on single-site). */
 function devdadcl_uninstall_site()
 {
+    delete_transient('devdadcl_activation_redirect'); // the first-activation redirect flag (60 s), gone anyway
     global $wpdb;
 
     delete_option('devdadcl_settings');
+    delete_option('devdadcl_menu_catalog'); // the menu snapshot for Hidden Menu Items (1.0.11)
+    delete_option('devdadcl_metabox_catalog'); // the meta box snapshot for Hidden Meta Boxes (1.0.12)
     delete_option('devdadcl_notices'); // legacy schema-1 stores
     delete_option('devdadcl_muted');
     delete_option('devdadcl_schema');

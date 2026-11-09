@@ -61,6 +61,22 @@ function devdadcl_page_css()
     return '
         /* Panel spacing: Overview = Safe Media Cleaner (py-6 straight under the tab row); other tabs = Malware Scanner (12px to the first section head, 24px under the last card). The scoped bundle ships none of these utilities. */
         .dd-app .pt-3 { padding-top:.75rem; }
+        /* Hidden menu items (1.0.11): role picker row, one block per role, submenus indented. */
+        .dd-app .ac-menu-pick { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+        .dd-app .ac-menu-pick-lbl { font-size:13px; font-weight:600; color:#1f2937; }
+        .dd-app .ac-menu-pick .dd-dd { width:260px; }
+        .dd-app .ac-menu-role[hidden] { display:none; }
+        .dd-app .ac-menu-role .dd-sel-group { margin-top:10px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
+        .dd-app .ac-menu-role .dd-opt { display:flex; align-items:center; gap:6px; margin:0 0 4px; font-size:13px; }
+        .dd-app .ac-menu-role .ac-menu-top { font-weight:600; color:#111827; }
+        .dd-app .ac-menu-role .ac-menu-sub { margin-left:22px; color:#374151; }
+        .dd-app .ac-menu-order-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f1f5f9; }
+        .dd-app .ac-menu-order-row:last-child { border-bottom:0; }
+        .dd-app .ac-menu-move { padding:2px 6px; min-width:0; line-height:1; }
+        .dd-app .ac-menu-move .dashicons { font-size:16px; width:16px; height:16px; }
+        .dd-app .ac-menu-order-title { flex:0 0 220px; font-size:13px; font-weight:600; color:#111827; }
+        .dd-app .ac-menu-rename { flex:1 1 auto; max-width:320px; }
+        @media (max-width: 640px) { .dd-app .ac-menu-order-row { flex-wrap:wrap; } .dd-app .ac-menu-order-title { flex-basis:100%; } }
         .dd-app .pb-6 { padding-bottom:1.5rem; }
         .dd-app .py-6 { padding-top:1.5rem; padding-bottom:1.5rem; }
         /* Header pill, warn state (section 18 amber); the bundle ships only the ok pill. */
@@ -73,7 +89,9 @@ function devdadcl_page_css()
         .dd-app .ac-actions > form > .dd-btn { width:100%; min-width:0; justify-content:center; font-size:12.5px; padding-left:6px; padding-right:6px; overflow:hidden; }
         .dd-app .dd-btn:disabled { opacity:.45; cursor:not-allowed; }
         /* Stat tile sub value (SMC inline rule; the bundle ships only num + lbl). */
-        .dd-app .dd-stat-sub { font-size:11px; color:#9ca3af; margin-top:2px; }
+        /* DESIGN.md 32: hero number tiles, ONE size in every plugin (Backup & Migration 1.0.1 = the reference, owner 5 Nov 2026). */
+        .dd-app .dd-stats { gap:16px; } .dd-app .dd-stats .dd-stat { padding:14px 12px; } .dd-app .dd-stats .dd-stat-num { font-size:24px; line-height:24px; font-weight:700; }
+        .dd-app .dd-stats .dd-stat-lbl { font-size:12px; line-height:16px; margin-top:6px; color:#374151; } .dd-app .dd-stats .dd-stat-sub { font-size:11px; line-height:1.5; margin-top:2px; color:#374151; }
         .dd-app .ac-chip { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:#f3f4f6; color:#4b5563; margin:0 4px 4px 0; }
         .dd-app .ac-badge-crit { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:2px 7px; border-radius:999px; background:#fef2f2; color:#b91c1c; border:1px solid #ef4444; }
         .dd-app .ac-badge-promo { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:2px 7px; border-radius:999px; background:#fffbeb; color:#b45309; border:1px solid #f59e0b; }
@@ -300,6 +318,16 @@ function devdadcl_handle_settings_save()
         }
     }
     $s['client_roles'] = array_values(array_unique($roles));
+    // Hidden menu items per role (1.0.11): allowlisted against the menu catalog and the client role choices.
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every role and id is allowlisted inside devdadcl_menus_sanitize()
+    $s['client_hidden_menus'] = devdadcl_menus_sanitize(isset($_POST['client_hidden_menus']) ? (array) $_POST['client_hidden_menus'] : array(), devdadcl_menus_catalog(), $allowed);
+    // Hidden meta boxes per role, menu order and menu names (1.0.12): every id, slug and title allowlisted against the catalogs.
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- allowlisted inside devdadcl_metaboxes_sanitize()
+    $s['client_hidden_metaboxes'] = devdadcl_metaboxes_sanitize(isset($_POST['client_hidden_metaboxes']) ? (array) $_POST['client_hidden_metaboxes'] : array(), devdadcl_metaboxes_catalog(), $allowed);
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- allowlisted inside devdadcl_menu_order_sanitize()
+    $s['menu_order'] = devdadcl_menu_order_sanitize(isset($_POST['menu_order']) ? (array) $_POST['menu_order'] : array(), devdadcl_menus_catalog());
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every slug and title is checked and cleaned inside devdadcl_menu_names_sanitize()
+    $s['menu_names'] = devdadcl_menu_names_sanitize(isset($_POST['menu_names']) ? (array) $_POST['menu_names'] : array(), devdadcl_menus_catalog());
     // The old UI offered "Appearance editor" and "Theme editor" as two switches that both target theme-editor.php.
     // One switch remains; the legacy flag mirrors it so the engine (which ORs the two) and old stored settings stay consistent.
     $s['client_hide_appearance_editor'] = $s['client_hide_theme_editor'];
@@ -1005,6 +1033,89 @@ function devdadcl_render_client_tab()
                         <?php devdadcl_setting_row($key, $meta[0], $meta[1], isset($meta[2]) ? $meta[2] : '', devdadcl_get_int($key, 1)); ?>
                     <?php endforeach; ?>
                 </table></div>
+            </div>
+
+            <?php
+            // Hidden menu items per role (1.0.11): the catalog is the menu this administrator sees (captured on every
+            // admin page load, plugin menus included); one block per role, the dropdown shows one block at a time; every
+            // block is in the form, so Save keeps every role's picks.
+            $catalog  = devdadcl_menus_catalog();
+            $hidden   = devdadcl_get_array('client_hidden_menus', array());
+            $mb_catalog = devdadcl_metaboxes_catalog(); // 1.0.12
+            $mb_hidden  = devdadcl_get_array('client_hidden_metaboxes', array());
+            $role_opt = array('' => __('Choose a role', 'devdome-admin-cleaner'));
+            foreach ($choices as $role => $meta) {
+                $role_opt[$role] = $meta['label'];
+            }
+            ?>
+            <div class="dd-sec-head" style="margin-top:32px;"><span class="dashicons dashicons-menu dd-ico"></span><h2 class="dd-h2"><?php esc_html_e('Hidden Menu Items', 'devdome-admin-cleaner'); ?></h2><?php devdadcl_tip(__('Any wp-admin menu or submenu, the ones other plugins and the theme added included, hidden for the role you pick. Applies while Client Mode is on. It hides the link only: the page behind it stays reachable by its address, and users who may manage options are never affected.', 'devdome-admin-cleaner')); ?></div>
+            <div class="dd-card">
+                <?php if (!$catalog || !$choices) : ?>
+                    <p class="dd-hint" style="margin:0;"><?php esc_html_e('The menu list fills itself the next time an administrator opens any admin page.', 'devdome-admin-cleaner'); ?></p>
+                <?php else : ?>
+                    <div class="ac-menu-pick">
+                        <span class="ac-menu-pick-lbl"><?php esc_html_e('Role', 'devdome-admin-cleaner'); ?></span>
+                        <?php devdadcl_render_dropdown('ac_menu_role', $role_opt, __('Role whose hidden menu items are shown', 'devdome-admin-cleaner')); ?>
+                    </div>
+                    <p class="dd-hint"><?php esc_html_e('Tick what this role should not see. Ticking a menu hides its whole submenu too.', 'devdome-admin-cleaner'); ?></p>
+                    <?php foreach ($choices as $role => $meta) : $picked = isset($hidden[$role]) && is_array($hidden[$role]) ? array_flip($hidden[$role]) : array(); ?>
+                        <div class="ac-menu-role" data-role="<?php echo esc_attr($role); ?>" hidden>
+                            <?php foreach ($catalog as $top) : if (!is_array($top) || empty($top['slug'])) { continue; } $tid = (string) $top['slug']; ?>
+                                <div class="dd-sel-group">
+                                    <label class="dd-opt ac-menu-top"><input type="checkbox" class="dd-check" form="ac-settings-form" name="client_hidden_menus[<?php echo esc_attr($role); ?>][]" value="<?php echo esc_attr($tid); ?>" <?php checked(isset($picked[$tid])); ?>> <?php echo esc_html($top['title']); ?></label>
+                                    <?php foreach ((isset($top['items']) && is_array($top['items'])) ? $top['items'] : array() as $it) : if (!is_array($it) || empty($it['slug'])) { continue; } $iid = $tid . '|' . $it['slug']; ?>
+                                        <label class="dd-opt ac-menu-sub"><input type="checkbox" class="dd-check" form="ac-settings-form" name="client_hidden_menus[<?php echo esc_attr($role); ?>][]" value="<?php echo esc_attr($iid); ?>" <?php checked(isset($picked[$iid])); ?>> <?php echo esc_html($it['title']); ?></label>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endforeach; ?>
+                            <?php // Hidden meta boxes for this role (1.0.12): one group per post type, ids "post_type|box id". ?>
+                            <?php $mb_picked = isset($mb_hidden[$role]) && is_array($mb_hidden[$role]) ? array_flip($mb_hidden[$role]) : array(); ?>
+                            <?php if (!$mb_catalog) : ?>
+                                <p class="dd-hint" style="margin-top:12px;"><?php esc_html_e('Meta boxes: the list fills itself the next time an administrator opens a post editor.', 'devdome-admin-cleaner'); ?></p>
+                            <?php else : ?>
+                                <?php foreach ($mb_catalog as $mb_type => $mb_boxes) : if (!is_array($mb_boxes) || !$mb_boxes) { continue; } $pto = get_post_type_object((string) $mb_type); ?>
+                                    <div class="dd-sel-group">
+                                        <span class="dd-opt ac-menu-top"><?php echo esc_html(sprintf(/* translators: %s: post type name */ __('Meta boxes: %s editor', 'devdome-admin-cleaner'), ($pto && isset($pto->labels->singular_name)) ? $pto->labels->singular_name : $mb_type)); ?></span>
+                                        <?php foreach ($mb_boxes as $mb_id => $mb_title) : $mid = (string) $mb_type . '|' . (string) $mb_id; ?>
+                                            <label class="dd-opt ac-menu-sub"><input type="checkbox" class="dd-check" form="ac-settings-form" name="client_hidden_metaboxes[<?php echo esc_attr($role); ?>][]" value="<?php echo esc_attr($mid); ?>" <?php checked(isset($mb_picked[$mid])); ?>> <?php echo esc_html($mb_title); ?></label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <?php
+            // Menu order and names (1.0.12): for everyone who sees the menu, administrators included, Client Mode on or off.
+            $order_now = devdadcl_menu_order_sorted(devdadcl_get_array('menu_order', array()), devdadcl_menus_top_slugs($catalog));
+            $names_now = devdadcl_menu_names_map(devdadcl_get_array('menu_names', array()));
+            $titles    = array();
+            foreach ($catalog as $top) {
+                if (is_array($top) && !empty($top['slug'])) {
+                    $titles[(string) $top['slug']] = isset($top['title']) ? (string) $top['title'] : '';
+                }
+            }
+            ?>
+            <div class="dd-sec-head" style="margin-top:32px;"><span class="dashicons dashicons-sort dd-ico"></span><h2 class="dd-h2"><?php esc_html_e('Menu Order And Names', 'devdome-admin-cleaner'); ?></h2><?php devdadcl_tip(__('Move a top-level menu up or down, or give it another name. Applies to everyone who sees the admin menu, administrators included, whether Client Mode is on or off. Submenus keep their place. Leave a name empty to keep the original.', 'devdome-admin-cleaner')); ?></div>
+            <div class="dd-card">
+                <?php if (!$catalog) : ?>
+                    <p class="dd-hint" style="margin:0;"><?php esc_html_e('The menu list fills itself the next time an administrator opens any admin page.', 'devdome-admin-cleaner'); ?></p>
+                <?php else : ?>
+                    <p class="dd-hint"><?php esc_html_e('Top to bottom is the order of the admin menu. Type a new name to rename an item.', 'devdome-admin-cleaner'); ?></p>
+                    <div class="ac-menu-order" id="ac-menu-order">
+                        <?php foreach ($order_now as $slug) : if (!isset($titles[$slug])) { continue; } ?>
+                            <div class="ac-menu-order-row" data-slug="<?php echo esc_attr($slug); ?>">
+                                <input type="hidden" form="ac-settings-form" name="menu_order[]" value="<?php echo esc_attr($slug); ?>">
+                                <button type="button" class="dd-btn ac-menu-move" data-move="up" aria-label="<?php esc_attr_e('Move up', 'devdome-admin-cleaner'); ?>"><span class="dashicons dashicons-arrow-up-alt2"></span></button>
+                                <button type="button" class="dd-btn ac-menu-move" data-move="down" aria-label="<?php esc_attr_e('Move down', 'devdome-admin-cleaner'); ?>"><span class="dashicons dashicons-arrow-down-alt2"></span></button>
+                                <span class="ac-menu-order-title"><?php echo esc_html($titles[$slug]); ?></span>
+                                <input type="text" form="ac-settings-form" class="dd-input ac-menu-rename" name="menu_names[<?php echo esc_attr($slug); ?>]" maxlength="60" value="<?php echo esc_attr(isset($names_now[$slug]) ? $names_now[$slug] : ''); ?>" placeholder="<?php echo esc_attr($titles[$slug]); ?>" aria-label="<?php echo esc_attr(sprintf(/* translators: %s: menu item title */ __('New name for %s', 'devdome-admin-cleaner'), $titles[$slug])); ?>">
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
     </div>
     <?php
